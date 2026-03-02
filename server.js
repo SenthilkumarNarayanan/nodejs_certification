@@ -3,33 +3,23 @@ const fs = require("fs");
 const path = require("path");
 
 const app = express();
-const PORT = 3000;
+
+const RECORD_FILE = path.join(__dirname, "files.json");
 
 app.get("/files", (req, res) => {
-    try {
-        const filenames = JSON.parse(
-            fs.readFileSync("filenames.txt", "utf-8")
-        );
+  try {
+    if (!fs.existsSync(RECORD_FILE)) return res.json([]);
 
-        const result = filenames.map(name => {
-            const content = fs.readFileSync(
-                path.join("files", name),
-                "utf-8"
-            );
+    const data = fs.readFileSync(RECORD_FILE, "utf-8");
+    res.json(JSON.parse(data));
 
-            return {
-                filename: name,
-                content: content
-            };
-        });
-
-        res.json(result);
-
-    } catch (err) {
-        res.status(500).json({ error: "Failed to read files" });
-    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to read files" });
+  }
 });
 
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log("Server running on port", PORT);
+  console.log(`Server running on port ${PORT}`);
 });

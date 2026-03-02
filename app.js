@@ -1,60 +1,28 @@
+const express = require("express");
 const fs = require("fs");
-const yargs = require("yargs/yargs");
-const { hideBin } = require("yargs/helpers");
+const path = require("path");
 
-// Initialize yargs properly
-const argv = yargs(hideBin(process.argv));
+const app = express();
 
-// File that stores filenames
-const RECORD_FILE = "recordfiles.txt";
+// ✅ SAME path as yargs file
+const RECORD_FILE = path.join(__dirname, "recordfiles.txt");
 
-// Ensure record file exists
-if (!fs.existsSync(RECORD_FILE)) {
-    fs.writeFileSync(RECORD_FILE, JSON.stringify([]));
-}
+app.get("/files", (req, res) => {
+  try {
+    if (!fs.existsSync(RECORD_FILE)) {
+      return res.json([]);
+    }
 
-// Read stored filenames
-const getStoredFilenames = () => {
     const data = fs.readFileSync(RECORD_FILE, "utf-8");
-    return JSON.parse(data);
-};
+    res.json(JSON.parse(data));
 
-// Save filename
-const saveFilename = (name) => {
-    const files = getStoredFilenames();
-    files.push(name);
-    fs.writeFileSync(RECORD_FILE, JSON.stringify(files, null, 2));
-};
-
-// Create new file
-const createFile = (filename) => {
-    const files = getStoredFilenames();
-
-    if (files.includes(filename) || fs.existsSync(filename)) {
-        console.log("this file already exists. Provide a new filename.");
-        return;
-    }
-
-    fs.writeFileSync(filename, "You are awesome");
-    saveFilename(filename);
-
-    console.log("File created:", filename);
-};
-
-// Command
-argv.command({
-    command: "create",
-    describe: "Create a new file",
-    builder: {
-        filename: {
-            describe: "File name",
-            demandOption: true,
-            type: "string"
-        }
-    },
-    handler(argv) {
-        createFile(argv.filename);
-    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to read files" });
+  }
 });
 
-argv.parse();
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
